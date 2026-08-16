@@ -2,11 +2,30 @@
 
 **AI-driven platform for Nagpur City that scores traffic risk across the city in real time and recommends where police officers should be deployed — with every recommendation explainable and manually overridable.**
 
-## Screenshot 
-
+![Status](https://img.shields.io/badge/status-design%20phase-yellow) ![Roadmap](https://img.shields.io/badge/roadmap-phase%201%20of%206-blue)
 
 *Prepared for: Nagpur City Traffic Police / Smart City Control Room*
 
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Problem Statement](#problem-statement)
+- [Goals](#goals)
+- [Key Features](#key-features)
+- [Scope](#scope)
+- [System Architecture](#system-architecture)
+- [Tech Stack](#tech-stack)
+- [Success Metrics](#success-metrics)
+- [Roadmap](#roadmap)
+- [Getting Started](#getting-started)
+- [Repository Structure](#repository-structure)
+- [Full Requirements and Design Detail](#full-requirements-and-design-detail)
+- [Contributing](#contributing)
+- [License](#license)
+
+---
 
 ## Overview
 
@@ -73,7 +92,21 @@ The end result is a single **Control Room Dashboard** that turns raw citizen rep
 
 **Out of scope (Phase 1):** automated traffic challans/fines · direct integration with emergency dispatch/ambulance systems · facial recognition or identity verification of complainants · predictive routing for individual vehicles/navigation apps · full mobile app store deployment (Phase 1 targets web + PWA)
 
+## System Architecture
 
+```mermaid
+flowchart TD
+    A[Citizen App / Web Portal] -->|complaints + media| B[Ingestion & Data Layer]
+    H[(Historical data & officer roster)] --> B
+    B --> C[Risk Scoring Engine]
+    C --> D[Allocation Engine]
+    D --> E[Explainability Module]
+    E --> F[Control Room Dashboard]
+    F -->|manual overrides| D
+    F --> G[Notification Service]
+    G -->|status updates| A
+    G -->|alerts| F
+```
 
 1. **Citizen App / Web Portal** — captures complaints and media, sends to the ingestion API
 2. **Ingestion & Data Layer** — stores complaints, media, historical accident data, and (optionally) live traffic feeds
@@ -279,4 +312,10 @@ npm run dev
 ## Contributing
 
 This project is currently in the design/early-build phase. If you'd like to discuss the approach or contribute, open an issue or reach out directly.
+
+## License
+
+No license has been chosen yet. For an academic/portfolio project like this, a permissive license such as MIT is common — add a `LICENSE` file once you've decided.
+
+
 
