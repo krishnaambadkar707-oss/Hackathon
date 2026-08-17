@@ -82,6 +82,7 @@ h1, h2, h3, h4, h5, h6 {
   background: var(--bg-main) !important;
   font-family: var(--font-primary);
   border-radius: 0.75rem;
+  outline: none;
 }
 
 .leaflet-popup-content-wrapper {
@@ -96,6 +97,68 @@ h1, h2, h3, h4, h5, h6 {
 .leaflet-popup-tip {
   background: var(--bg-panel) !important;
 }
+
+/* Custom Floating Zoom Control Panel */
+.map-zoom-controls {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.map-zoom-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+  font-weight: 700;
+}
+
+.map-zoom-btn:hover {
+  background: var(--brand-primary);
+  color: #ffffff;
+  border-color: var(--brand-primary);
+  transform: scale(1.05);
+}
+
+.map-zoom-btn:active {
+  transform: scale(0.95);
+}
+
+.map-recenter-btn {
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 8px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+}
+
+.map-recenter-btn:hover {
+  background: var(--brand-primary);
+  color: #ffffff;
+  border-color: var(--brand-primary);
+}
+
 
 /* Pulse animation for High Risk markers & Live Incidents */
 @keyframes pulse-red {

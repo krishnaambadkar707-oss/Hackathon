@@ -1,16 +1,35 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Bell, AlertTriangle, CheckCircle, FileText, X, Check, Trash2, MapPin } from "lucide-react";
 
 export default function NotificationCenter({ notifications, onMarkAsRead, onClearAll, onSelectJunction }) {
   const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef(null);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("touchstart", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, [isOpen]);
+
   return (
-    <div style={{ position: "relative" }}>
+    <div ref={containerRef} style={{ position: "relative" }}>
       {/* Bell Trigger Button */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => setIsOpen((prev) => !prev)}
         style={{
           background: "var(--bg-hover)",
           border: "1px solid var(--border-color)",
@@ -41,22 +60,36 @@ export default function NotificationCenter({ notifications, onMarkAsRead, onClea
         )}
       </button>
 
-      {/* Slide-Down Notifications Dropdown */}
+      {/* Floating Popover Notifications Dropdown */}
       {isOpen && (
         <div className="glass-panel" style={{
           position: "absolute",
-          top: "120%",
-          right: 0,
-          width: "360px",
-          maxHeight: "480px",
+          top: "calc(100% + 10px)",
+          right: "-120px",
+          width: "350px",
+          maxWidth: "calc(100vw - 24px)",
+          maxHeight: "calc(100vh - 80px)",
           overflowY: "auto",
           backgroundColor: "var(--bg-panel)",
           border: "1px solid var(--border-color)",
           borderRadius: "0.75rem",
-          boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.5)",
+          boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3)",
           zIndex: 2500,
           padding: "1rem"
         }}>
+          {/* Caret pointing up to Bell */}
+          <div style={{
+            position: "absolute",
+            top: "-6px",
+            right: "135px",
+            width: "12px",
+            height: "12px",
+            backgroundColor: "var(--bg-panel)",
+            borderTop: "1px solid var(--border-color)",
+            borderLeft: "1px solid var(--border-color)",
+            transform: "rotate(45deg)",
+            zIndex: 2501
+          }} />
           {/* Header */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.75rem", borderBottom: "1px solid var(--border-color)", paddingBottom: "0.5rem" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>

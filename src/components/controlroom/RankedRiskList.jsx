@@ -82,6 +82,7 @@ export default function RankedRiskList({
             <div
               key={id}
               className="glass-card"
+              onClick={() => onSelectJunction(junction)}
               style={{
                 padding: "0.75rem",
                 borderLeft: `4px solid ${risk.color}`,
@@ -94,6 +95,7 @@ export default function RankedRiskList({
                 display: "flex",
                 flexDirection: "column",
                 gap: "0.4rem",
+                cursor: "pointer",
                 transition: "all 0.15s ease"
               }}
             >

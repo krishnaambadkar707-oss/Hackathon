@@ -1,7 +1,8 @@
-import React from "react";
-import { MapContainer, TileLayer, Marker, Popup, Polyline, CircleMarker } from "react-leaflet";
+import React, { useEffect } from "react";
+import { MapContainer, TileLayer, Marker, Popup, Polyline, CircleMarker, useMap } from "react-leaflet";
 import L from "leaflet";
-import { Shield, AlertTriangle, MapPin, Eye, PhoneCall } from "lucide-react";
+import "leaflet/dist/leaflet.css";
+import { Shield, AlertTriangle, MapPin, Eye, PhoneCall, Plus, Minus, Target, Compass } from "lucide-react";
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -9,6 +10,104 @@ L.Icon.Default.mergeOptions({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png"
 });
+
+function MapController({ selectedJunction }) {
+  const map = useMap();
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      map.invalidateSize();
+    }, 150);
+
+    const handleResize = () => {
+      map.invalidateSize();
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [map]);
+
+  useEffect(() => {
+    if (selectedJunction && selectedJunction.lat && selectedJunction.lng) {
+      map.flyTo([selectedJunction.lat, selectedJunction.lng], 15, {
+        animate: true,
+        duration: 1.2
+      });
+    }
+  }, [selectedJunction, map]);
+
+  return null;
+}
+
+function CustomZoomControls({ centerNagpur, highRiskJunctions }) {
+  const map = useMap();
+
+  const handleZoomIn = () => {
+    map.zoomIn();
+  };
+
+  const handleZoomOut = () => {
+    map.zoomOut();
+  };
+
+  const handleRecenter = () => {
+    map.flyTo(centerNagpur, 13, { animate: true, duration: 1 });
+  };
+
+  const handleFocusHighRisk = () => {
+    if (highRiskJunctions && highRiskJunctions.length > 0) {
+      const highest = highRiskJunctions[0];
+      map.flyTo([highest.lat, highest.lng], 15, { animate: true, duration: 1 });
+    }
+  };
+
+  return (
+    <div className="map-zoom-controls">
+      <button
+        type="button"
+        onClick={handleZoomIn}
+        className="map-zoom-btn"
+        title="Zoom In (+)"
+        aria-label="Zoom In"
+      >
+        <Plus style={{ width: "18px", height: "18px" }} />
+      </button>
+      <button
+        type="button"
+        onClick={handleZoomOut}
+        className="map-zoom-btn"
+        title="Zoom Out (-)"
+        aria-label="Zoom Out"
+      >
+        <Minus style={{ width: "18px", height: "18px" }} />
+      </button>
+      <button
+        type="button"
+        onClick={handleRecenter}
+        className="map-recenter-btn"
+        title="Reset Map View to Nagpur Center"
+      >
+        <Target style={{ width: "15px", height: "15px", color: "#3B82F6" }} />
+        <span>Recenter Nagpur</span>
+      </button>
+      {highRiskJunctions && highRiskJunctions.length > 0 && (
+        <button
+          type="button"
+          onClick={handleFocusHighRisk}
+          className="map-recenter-btn"
+          style={{ borderColor: "rgba(239, 68, 68, 0.4)", color: "#EF4444" }}
+          title="Zoom to Highest Risk Hotspot"
+        >
+          <AlertTriangle style={{ width: "14px", height: "14px", color: "#EF4444" }} />
+          <span>Top Hotspot</span>
+        </button>
+      )}
+    </div>
+  );
+}
 
 function createRiskMarkerIcon(score, level, isSimulatedIncident) {
   let bgColor = "#10B981";
@@ -86,9 +185,16 @@ export default function HeatmapView({
   simulatedIncident,
   theme,
   onSelectJunction,
-  onOpenOverride
+  onOpenOverride,
+  selectedJunction
 }) {
   const centerNagpur = [21.1458, 79.0882]; // Sitabuldi Central
+  const nagpurBounds = [
+    [20.85, 78.85],
+    [21.35, 79.35]
+  ];
+
+  const highRiskJunctions = junctionsWithRisk.filter((j) => j.risk.level === "HIGH");
 
   const mapTileUrl = theme === "light"
     ? "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
@@ -99,15 +205,25 @@ export default function HeatmapView({
       <MapContainer
         center={centerNagpur}
         zoom={13}
+        minZoom={11}
+        maxZoom={18}
+        zoomSnap={0.5}
+        zoomDelta={0.5}
         scrollWheelZoom={true}
+        zoomControl={false}
+        maxBounds={nagpurBounds}
+        maxBoundsViscosity={0.8}
         style={{ width: "100%", height: "100%" }}
       >
         <TileLayer
           key={theme}
           attribution='&copy; <a href="https://carto.com/">CARTO</a>'
           url={mapTileUrl}
-          maxZoom={18}
+          maxNativeZoom={18}
+          maxZoom={19}
         />
+        <MapController selectedJunction={selectedJunction} />
+        <CustomZoomControls centerNagpur={centerNagpur} highRiskJunctions={highRiskJunctions} />
 
         {aiAssignments.assignments.map((assignment, idx) => {
           const junction = junctionsWithRisk.find((j) => j.id === assignment.junctionId);

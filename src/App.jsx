@@ -63,6 +63,7 @@ export default function App() {
   ]);
 
   // Active Modals & Drawers Triggers
+  const [selectedJunction, setSelectedJunction] = useState(null);
   const [explainJunction, setExplainJunction] = useState(null);
   const [overrideJunction, setOverrideJunction] = useState(null);
   const [showComparisonModal, setShowComparisonModal] = useState(false);
@@ -252,8 +253,15 @@ export default function App() {
               aiAssignments={aiAssignments}
               simulatedIncident={simulatedIncident}
               theme={theme}
-              onSelectJunction={(j) => setExplainJunction(j)}
-              onOpenOverride={(j) => setOverrideJunction(j)}
+              selectedJunction={selectedJunction}
+              onSelectJunction={(j) => {
+                setSelectedJunction(j);
+                setExplainJunction(j);
+              }}
+              onOpenOverride={(j) => {
+                setSelectedJunction(j);
+                setOverrideJunction(j);
+              }}
             />
 
             {/* Right Column: Ranked Risk Locations */}
@@ -262,8 +270,14 @@ export default function App() {
               aiAssignments={aiAssignments}
               officers={officers}
               simulatedIncident={simulatedIncident}
-              onSelectJunction={(j) => setExplainJunction(j)}
-              onOpenOverride={(j) => setOverrideJunction(j)}
+              onSelectJunction={(j) => {
+                setSelectedJunction(j);
+                setExplainJunction(j);
+              }}
+              onOpenOverride={(j) => {
+                setSelectedJunction(j);
+                setOverrideJunction(j);
+              }}
               onTriggerIncident={handleTriggerIncident}
             />
           </div>
