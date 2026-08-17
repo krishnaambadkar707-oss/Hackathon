@@ -1,16 +1,25 @@
-import React, { useState } from "react";
-import { Camera, MapPin, CheckCircle, ArrowRight, ShieldAlert, Car, AlertOctagon, ParkingSquare } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Camera, MapPin, CheckCircle, ArrowRight, ShieldAlert, Car, AlertOctagon, ParkingSquare, Sparkles } from "lucide-react";
 import { TRANSLATIONS } from "../common/LanguageSelector";
 
-export default function ComplaintForm({ junctions, currentLang, onSubmitComplaint, onCancel }) {
+export default function ComplaintForm({ junctions, currentLang, onSubmitComplaint, onCancel, initialExtractedData = null }) {
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.EN;
 
-  const [category, setCategory] = useState("JAM");
-  const [selectedJunctionId, setSelectedJunctionId] = useState(junctions[0]?.id || "j1");
-  const [description, setDescription] = useState("");
-  const [voterName, setVoterName] = useState("");
+  const [category, setCategory] = useState(initialExtractedData?.category || "JAM");
+  const [selectedJunctionId, setSelectedJunctionId] = useState(initialExtractedData?.junctionId || junctions[0]?.id || "j1");
+  const [description, setDescription] = useState(initialExtractedData?.description || "");
+  const [voterName, setVoterName] = useState(initialExtractedData?.citizenName || "");
   const [photoPreview, setPhotoPreview] = useState("https://images.unsplash.com/photo-1566232392379-afd9298e6a46?w=600&auto=format&fit=crop&q=60");
   const [submittedTrackingId, setSubmittedTrackingId] = useState(null);
+
+  useEffect(() => {
+    if (initialExtractedData) {
+      if (initialExtractedData.category) setCategory(initialExtractedData.category);
+      if (initialExtractedData.junctionId) setSelectedJunctionId(initialExtractedData.junctionId);
+      if (initialExtractedData.description) setDescription(initialExtractedData.description);
+      if (initialExtractedData.citizenName) setVoterName(initialExtractedData.citizenName);
+    }
+  }, [initialExtractedData]);
 
   const categories = [
     { id: "JAM", label: t.categoryJam, icon: Car, color: "#F59E0B" },
@@ -93,6 +102,25 @@ export default function ComplaintForm({ junctions, currentLang, onSubmitComplain
 
   return (
     <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1.2rem", padding: "1rem" }}>
+      {/* AI Extraction Banner Badge if pre-filled */}
+      {initialExtractedData && (
+        <div style={{
+          background: "rgba(37, 99, 235, 0.1)",
+          border: "1px solid #3B82F6",
+          color: "#1E40AF",
+          fontSize: "0.75rem",
+          fontWeight: "700",
+          padding: "0.4rem 0.6rem",
+          borderRadius: "0.4rem",
+          display: "flex",
+          alignItems: "center",
+          gap: "0.3rem"
+        }}>
+          <Sparkles style={{ width: "14px", height: "14px", color: "#2563EB" }} />
+          Form pre-filled automatically by Citizen AI Assistant!
+        </div>
+      )}
+
       {/* Category Picker */}
       <div>
         <label style={{ fontSize: "0.85rem", fontWeight: "700", color: "#0F172A", display: "block", marginBottom: "0.5rem" }}>

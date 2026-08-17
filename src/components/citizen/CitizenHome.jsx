@@ -1,12 +1,24 @@
 import React, { useState } from "react";
-import { PlusCircle, Search, MapPin, ThumbsUp, Shield, Smartphone, Globe, Car, AlertOctagon, ParkingSquare } from "lucide-react";
+import { PlusCircle, Search, Sparkles, Shield, Smartphone, ThumbsUp } from "lucide-react";
 import LanguageSelector, { TRANSLATIONS } from "../common/LanguageSelector";
 import ComplaintForm from "./ComplaintForm";
 import TrackComplaint from "./TrackComplaint";
+import CitizenAIReportAgent from "./CitizenAIReportAgent";
 
 export default function CitizenHome({ junctions, complaints, currentLang, onSelectLang, onSubmitComplaint }) {
-  const [screen, setScreen] = useState("HOME"); // HOME, NEW_COMPLAINT, TRACK
+  const [screen, setScreen] = useState("HOME"); // HOME, AI_AGENT, NEW_COMPLAINT, TRACK
+  const [extractedDataForForm, setExtractedDataForForm] = useState(null);
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.EN;
+
+  const handleFormAutoFill = (extractedData) => {
+    setExtractedDataForForm(extractedData);
+    setScreen("NEW_COMPLAINT");
+  };
+
+  const handleDirectSubmit = (newComplaint) => {
+    onSubmitComplaint(newComplaint);
+    setScreen("TRACK");
+  };
 
   return (
     <div style={{
@@ -15,15 +27,15 @@ export default function CitizenHome({ junctions, complaints, currentLang, onSele
       display: "flex",
       justifyContent: "center",
       alignItems: "center",
-      background: "#0B0F19",
+      background: "var(--bg-main)",
       padding: "1rem"
     }}>
       {/* Mobile Device Container Mockup */}
       <div style={{
         width: "100%",
-        maxWidth: "420px",
+        maxWidth: "430px",
         height: "100%",
-        maxHeight: "820px",
+        maxHeight: "840px",
         background: "#F8FAFC",
         color: "#0F172A",
         borderRadius: "1.25rem",
@@ -36,7 +48,7 @@ export default function CitizenHome({ junctions, complaints, currentLang, onSele
       }}>
         {/* Mobile Header Bar */}
         <div style={{
-          background: "#1E40AF",
+          background: "linear-gradient(135deg, #1E40AF 0%, #2563EB 100%)",
           color: "#FFFFFF",
           padding: "0.85rem 1rem",
           display: "flex",
@@ -46,7 +58,7 @@ export default function CitizenHome({ junctions, complaints, currentLang, onSele
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
               <Shield style={{ width: "20px", height: "20px", color: "#60A5FA" }} />
-              <h2 style={{ fontSize: "0.95rem", fontWeight: "800", margin: 0 }}>
+              <h2 style={{ fontSize: "0.95rem", fontWeight: "800", margin: 0, letterSpacing: "0.02em" }}>
                 NAGPUR TRAFFIC POLICE
               </h2>
             </div>
@@ -59,12 +71,26 @@ export default function CitizenHome({ junctions, complaints, currentLang, onSele
 
         {/* Dynamic Body Content */}
         <div style={{ flex: 1, overflowY: "auto" }}>
+          {screen === "AI_AGENT" && (
+            <CitizenAIReportAgent
+              junctions={junctions}
+              currentLang={currentLang}
+              onFormAutoFill={handleFormAutoFill}
+              onSubmitDirect={handleDirectSubmit}
+              onCancel={() => setScreen("HOME")}
+            />
+          )}
+
           {screen === "NEW_COMPLAINT" && (
             <ComplaintForm
               junctions={junctions}
               currentLang={currentLang}
               onSubmitComplaint={onSubmitComplaint}
-              onCancel={() => setScreen("HOME")}
+              onCancel={() => {
+                setExtractedDataForForm(null);
+                setScreen("HOME");
+              }}
+              initialExtractedData={extractedDataForForm}
             />
           )}
 
@@ -80,23 +106,36 @@ export default function CitizenHome({ junctions, complaints, currentLang, onSele
             <div style={{ padding: "1rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
               {/* Primary Action Buttons */}
               <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+                {/* AI Voice Agent Report Button */}
                 <button
-                  onClick={() => setScreen("NEW_COMPLAINT")}
-                  className="btn-primary"
+                  onClick={() => setScreen("AI_AGENT")}
                   style={{
                     padding: "0.85rem 1rem",
                     borderRadius: "0.75rem",
                     fontSize: "0.95rem",
+                    fontWeight: "800",
+                    display: "flex",
+                    alignItems: "center",
                     justifyContent: "center",
-                    boxShadow: "0 6px 16px rgba(37, 99, 235, 0.3)"
+                    gap: "0.5rem",
+                    background: "linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)",
+                    color: "#FFFFFF",
+                    border: "none",
+                    cursor: "pointer",
+                    boxShadow: "0 6px 18px rgba(37, 99, 235, 0.35)",
+                    fontFamily: "var(--font-heading)"
                   }}
                 >
-                  <PlusCircle style={{ width: "20px", height: "20px" }} />
-                  {t.reportIssueBtn}
+                  <Sparkles style={{ width: "20px", height: "20px", color: "#FDE047" }} />
+                  Report with AI Voice/Text Agent
                 </button>
 
+                {/* Standard Manual Form Button */}
                 <button
-                  onClick={() => setScreen("TRACK")}
+                  onClick={() => {
+                    setExtractedDataForForm(null);
+                    setScreen("NEW_COMPLAINT");
+                  }}
                   className="btn-secondary"
                   style={{
                     padding: "0.75rem 1rem",
@@ -105,7 +144,26 @@ export default function CitizenHome({ junctions, complaints, currentLang, onSele
                     justifyContent: "center",
                     background: "#FFFFFF",
                     color: "#1E40AF",
-                    border: "1.5px solid #93C5FD"
+                    border: "1.5px solid #93C5FD",
+                    fontWeight: "700"
+                  }}
+                >
+                  <PlusCircle style={{ width: "18px", height: "18px" }} />
+                  {t.reportIssueBtn} (Standard Form)
+                </button>
+
+                {/* Track Complaint Status Button */}
+                <button
+                  onClick={() => setScreen("TRACK")}
+                  className="btn-secondary"
+                  style={{
+                    padding: "0.75rem 1rem",
+                    borderRadius: "0.75rem",
+                    fontSize: "0.88rem",
+                    justifyContent: "center",
+                    background: "#F8FAFC",
+                    color: "#475569",
+                    border: "1px solid #CBD5E1"
                   }}
                 >
                   <Search style={{ width: "18px", height: "18px" }} />
