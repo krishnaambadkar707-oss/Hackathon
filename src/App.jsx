@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import Navbar from "./components/common/Navbar";
+import CommandSidebar from "./components/controlroom/CommandSidebar";
 import ExplainabilityModal from "./components/common/ExplainabilityModal";
 import DashboardHeader from "./components/controlroom/DashboardHeader";
 import HeatmapView from "./components/controlroom/HeatmapView";
@@ -8,6 +9,9 @@ import IncidentSimulator from "./components/controlroom/IncidentSimulator";
 import BaselineComparison from "./components/controlroom/BaselineComparison";
 import ManualOverrideModal from "./components/controlroom/ManualOverrideModal";
 import CitizenHome from "./components/citizen/CitizenHome";
+import AnalyticsView from "./components/controlroom/AnalyticsView";
+import DeploymentView from "./components/controlroom/DeploymentView";
+import IncidentLogsView from "./components/controlroom/IncidentLogsView";
 
 import HistoryDrawer from "./components/common/HistoryDrawer";
 import NotificationCenter from "./components/common/NotificationCenter";
@@ -19,21 +23,30 @@ import { runAIAllocation, calculateBaselineVsAIMetrics } from "./services/alloca
 import { storageService } from "./services/storageService";
 
 export default function App() {
-  // Navigation & View Mode
-  const [viewMode, setViewMode] = useState(storageService.getViewMode());
+  // Main Top Bar Navigation View (CONTROL_ROOM, CITIZEN, ANALYTICS, DEPLOYMENT, INCIDENT_LOGS)
+  const [viewMode, setViewMode] = useState(storageService.getViewMode() || "CONTROL_ROOM");
+  // Left Sidebar Sub-View (MAP_OVERVIEW, INCIDENT_LOGS, RISK_HEATMAP, RESOURCE_HUB, SIMULATION)
+  const [activeSubView, setActiveSubView] = useState("MAP_OVERVIEW");
+
   const [currentLang, setCurrentLang] = useState(storageService.getLanguage());
   const [useAIPlan, setUseAIPlan] = useState(true);
 
-  // Theme & Preferences State
+  // Theme & Settings Preferences State
   const [theme, setTheme] = useState(localStorage.getItem("nagpur_theme") || "dark");
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [autoRefreshSec, setAutoRefreshSec] = useState(15);
 
-  // Sync theme attribute on document root element
+  // Sync theme attribute on document root element & localStorage
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
     localStorage.setItem("nagpur_theme", theme);
   }, [theme]);
+
+  // Background Mode (command-room backdrop screen_1.png vs standard dark GIS)
+  const [isCommandRoomBg, setIsCommandRoomBg] = useState(true);
+
+  // Search Filter Query for bottom map search bar
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Core Datasets & Persistent States
   const [junctions, setJunctions] = useState(storageService.getJunctions());
@@ -106,7 +119,6 @@ export default function App() {
     const updated = storageService.saveComplaint(newComplaint);
     setComplaints(updated);
 
-    // Add live notification
     const newNotif = {
       id: `n-${Date.now()}`,
       type: "INFO",
@@ -118,7 +130,7 @@ export default function App() {
     setNotifications((prev) => [newNotif, ...prev]);
   };
 
-  // Handle Live Incident Trigger (C7)
+  // Handle Live Incident Trigger
   const handleTriggerIncident = (targetJunctionId) => {
     const targetJunction = junctions.find((j) => j.id === targetJunctionId);
     if (!targetJunction) return;
@@ -146,7 +158,6 @@ export default function App() {
     storageService.setSimulatedIncident(incidentData);
     setSimulatedIncident(incidentData);
 
-    // Add Emergency Notification
     const emergencyNotif = {
       id: `n-inc-${Date.now()}`,
       type: "EMERGENCY",
@@ -163,7 +174,7 @@ export default function App() {
     setSimulatedIncident(null);
   };
 
-  // Handle Manual Override (C8)
+  // Handle Manual Override
   const handleSaveOverride = (junctionId, officerId, reason) => {
     const updated = storageService.saveOverride(junctionId, officerId, reason);
     setOverrides(updated);
@@ -174,7 +185,6 @@ export default function App() {
     setOverrides(updated);
   };
 
-  // Handle Notifications
   const handleMarkNotificationRead = (notifId) => {
     setNotifications((prev) =>
       prev.map((n) => (n.id === notifId ? { ...n, read: true } : n))
@@ -185,37 +195,45 @@ export default function App() {
     setNotifications([]);
   };
 
-  // Handle Data Reset
-  const handleResetData = () => {
-    const reset = storageService.resetAllData();
-    setJunctions(reset.junctions);
-    setOfficers(reset.officers);
-    setComplaints(reset.complaints);
-    setOverrides(reset.overrides);
-    setSimulatedIncident(reset.simulatedIncident);
+  const handleOpenIncidentLogs = () => {
+    setViewMode("INCIDENT_LOGS");
+    setActiveSubView("INCIDENT_LOGS");
   };
 
   return (
-    <div style={{ width: "100vw", height: "100vh", display: "flex", flexDirection: "column", background: "var(--bg-main)" }}>
-      {/* Navbar Header */}
+    <div style={{
+      width: "100vw",
+      height: "100vh",
+      display: "flex",
+      flexDirection: "column",
+      background: "var(--bg-main)",
+      overflow: "hidden"
+    }} className={isCommandRoomBg ? "command-room-bg" : ""}>
+      {/* Top Navigation Bar */}
       <Navbar
         viewMode={viewMode}
-        setViewMode={setViewMode}
+        setViewMode={(mode) => {
+          setViewMode(mode);
+          if (mode === "CONTROL_ROOM" && activeSubView === "INCIDENT_LOGS") {
+            setActiveSubView("MAP_OVERVIEW");
+          }
+        }}
         useAIPlan={useAIPlan}
         setUseAIPlan={setUseAIPlan}
         theme={theme}
         setTheme={setTheme}
+        isCommandRoomBg={isCommandRoomBg}
+        setIsCommandRoomBg={setIsCommandRoomBg}
         simulatedIncident={simulatedIncident}
         notifications={notifications}
         onMarkNotificationRead={handleMarkNotificationRead}
         onClearNotifications={handleClearNotifications}
         onOpenIncidentModal={() => handleTriggerIncident("j2")}
-        onOpenHistory={() => setIsHistoryOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
-        onResetData={handleResetData}
+        onOpenIncidentLogs={handleOpenIncidentLogs}
       />
 
-      {/* Main Body */}
+      {/* Main Body View Switching */}
       {viewMode === "CITIZEN" ? (
         <CitizenHome
           junctions={junctions}
@@ -224,74 +242,139 @@ export default function App() {
           onSelectLang={setCurrentLang}
           onSubmitComplaint={handleAddComplaint}
         />
+      ) : viewMode === "ANALYTICS" ? (
+        <AnalyticsView
+          metrics={metrics}
+          junctionsWithRisk={junctionsWithRisk}
+          aiAssignments={aiAssignments}
+        />
+      ) : viewMode === "DEPLOYMENT" ? (
+        <DeploymentView
+          officers={officers}
+          junctionsWithRisk={junctionsWithRisk}
+          aiAssignments={aiAssignments}
+          onOpenOverride={(j) => {
+            setSelectedJunction(j);
+            setOverrideJunction(j);
+          }}
+        />
+      ) : viewMode === "INCIDENT_LOGS" ? (
+        <IncidentLogsView
+          complaints={complaints}
+          simulatedIncident={simulatedIncident}
+          overrides={overrides}
+          junctionsWithRisk={junctionsWithRisk}
+        />
       ) : (
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-          {/* Live Dashboard KPI Header */}
-          <DashboardHeader
-            metrics={metrics}
-            activeZone="Sitabuldi & West Nagpur"
-            simulatedIncident={simulatedIncident}
-            unmannedHotspotsCount={aiAssignments.unmannedHighRiskHotspots.length}
-            onOpenComparison={() => setShowComparisonModal(true)}
+        /* CONTROL ROOM View Layout with Left HUD Sidebar */
+        <div style={{ flex: 1, display: "flex", overflow: "hidden", position: "relative" }}>
+          {/* Left Collapsible HUD Command Sidebar */}
+          <CommandSidebar
+            activeSubView={activeSubView}
+            setActiveSubView={setActiveSubView}
+            onOpenDispatchModal={() => handleTriggerIncident("j1")}
+            onOpenSystemStatusModal={() => setIsHistoryOpen(true)}
           />
 
-          {/* Live Incident Simulator Execution Bar */}
-          <IncidentSimulator
-            simulatedIncident={simulatedIncident}
-            junctions={junctionsWithRisk}
-            officers={officers}
-            onTriggerIncident={handleTriggerIncident}
-            onClearIncident={handleClearIncident}
-          />
-
-          {/* Main 2-Column Split: Map & Ranked List */}
-          <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 380px", overflow: "hidden" }}>
-            {/* Left Column: Interactive Heatmap */}
-            <HeatmapView
-              junctionsWithRisk={junctionsWithRisk}
-              officers={officers}
-              aiAssignments={aiAssignments}
+          {/* Sub-View Content rendering */}
+          {activeSubView === "INCIDENT_LOGS" ? (
+            <IncidentLogsView
+              complaints={complaints}
               simulatedIncident={simulatedIncident}
-              theme={theme}
-              selectedJunction={selectedJunction}
-              onSelectJunction={(j) => {
-                setSelectedJunction(j);
-                setExplainJunction(j);
-              }}
+              overrides={overrides}
+              junctionsWithRisk={junctionsWithRisk}
+            />
+          ) : activeSubView === "RESOURCE_HUB" ? (
+            <DeploymentView
+              officers={officers}
+              junctionsWithRisk={junctionsWithRisk}
+              aiAssignments={aiAssignments}
               onOpenOverride={(j) => {
                 setSelectedJunction(j);
                 setOverrideJunction(j);
               }}
             />
+          ) : (
+            /* MAP_OVERVIEW, RISK_HEATMAP & SIMULATION Sub-Views */
+            <div style={{ flex: 1, display: "flex", position: "relative", overflow: "hidden" }}>
+              {/* Top Floating KPI Header Cards Bar */}
+              <DashboardHeader
+                metrics={metrics}
+                activeZone="Sitabuldi & West Nagpur"
+                simulatedIncident={simulatedIncident}
+                unmannedHotspotsCount={aiAssignments.unmannedHighRiskHotspots.length}
+                onOpenComparison={() => setShowComparisonModal(true)}
+              />
 
-            {/* Right Column: Ranked Risk Locations */}
-            <RankedRiskList
-              junctionsWithRisk={junctionsWithRisk}
-              aiAssignments={aiAssignments}
-              officers={officers}
-              simulatedIncident={simulatedIncident}
-              onSelectJunction={(j) => {
-                setSelectedJunction(j);
-                setExplainJunction(j);
-              }}
-              onOpenOverride={(j) => {
-                setSelectedJunction(j);
-                setOverrideJunction(j);
-              }}
-              onTriggerIncident={handleTriggerIncident}
-            />
-          </div>
+              {/* Simulation Banner Bar */}
+              {(simulatedIncident || activeSubView === "SIMULATION") && (
+                <div style={{
+                  position: "absolute",
+                  top: "90px",
+                  left: "320px",
+                  right: "380px",
+                  zIndex: 890
+                }}>
+                  <IncidentSimulator
+                    simulatedIncident={simulatedIncident}
+                    junctions={junctionsWithRisk}
+                    officers={officers}
+                    onTriggerIncident={handleTriggerIncident}
+                    onClearIncident={handleClearIncident}
+                  />
+                </div>
+              )}
+
+              {/* Center Map HUD Area */}
+              <div style={{ flex: 1, height: "100%", position: "relative" }}>
+                <HeatmapView
+                  junctionsWithRisk={junctionsWithRisk}
+                  officers={officers}
+                  aiAssignments={aiAssignments}
+                  simulatedIncident={simulatedIncident}
+                  theme={theme}
+                  selectedJunction={selectedJunction}
+                  onSelectJunction={(j) => {
+                    setSelectedJunction(j);
+                    setExplainJunction(j);
+                  }}
+                  onOpenOverride={(j) => {
+                    setSelectedJunction(j);
+                    setOverrideJunction(j);
+                  }}
+                  searchQuery={searchQuery}
+                  setSearchQuery={setSearchQuery}
+                />
+              </div>
+
+              {/* Right Floating Ranked Risks Panel */}
+              <RankedRiskList
+                junctionsWithRisk={junctionsWithRisk}
+                aiAssignments={aiAssignments}
+                officers={officers}
+                simulatedIncident={simulatedIncident}
+                onSelectJunction={(j) => {
+                  setSelectedJunction(j);
+                  setExplainJunction(j);
+                }}
+                onOpenOverride={(j) => {
+                  setSelectedJunction(j);
+                  setOverrideJunction(j);
+                }}
+                onTriggerIncident={handleTriggerIncident}
+              />
+            </div>
+          )}
         </div>
       )}
 
-      {/* Reusable Explainability Modal (C5) */}
+      {/* Modals & Drawers */}
       <ExplainabilityModal
         junction={explainJunction}
         onClose={() => setExplainJunction(null)}
         onSimulateIncident={handleTriggerIncident}
       />
 
-      {/* Baseline vs AI Comparison Modal (C9) */}
       {showComparisonModal && (
         <BaselineComparison
           metrics={metrics}
@@ -299,7 +382,6 @@ export default function App() {
         />
       )}
 
-      {/* Manual Supervisor Override Modal (C8) */}
       <ManualOverrideModal
         junction={overrideJunction}
         officers={officers}
@@ -309,7 +391,6 @@ export default function App() {
         onClose={() => setOverrideJunction(null)}
       />
 
-      {/* History Log Drawer */}
       <HistoryDrawer
         complaints={complaints}
         overrides={overrides}
@@ -318,7 +399,7 @@ export default function App() {
         onClose={() => setIsHistoryOpen(false)}
       />
 
-      {/* Settings Modal */}
+      {/* Fully Wired Settings Modal */}
       <SettingsModal
         theme={theme}
         setTheme={setTheme}

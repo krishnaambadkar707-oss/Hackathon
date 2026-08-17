@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Eye, ShieldAlert, Sliders, MapPin, UserCheck, AlertTriangle } from "lucide-react";
+import { Sliders, MapPin, Eye, UserCheck, Shield } from "lucide-react";
 
 export default function RankedRiskList({
   junctionsWithRisk,
@@ -10,68 +10,107 @@ export default function RankedRiskList({
   onOpenOverride,
   onTriggerIncident
 }) {
-  const [filterLevel, setFilterLevel] = useState("ALL"); // ALL, HIGH, MEDIUM, LOW
+  const [filterLevel, setFilterLevel] = useState("ALL");
 
-  // Sort descending by risk score
   const sortedJunctions = [...junctionsWithRisk].sort((a, b) => b.risk.score - a.risk.score);
 
   const filtered = sortedJunctions.filter((j) => {
     if (filterLevel === "ALL") return true;
-    return j.risk.level === filterLevel;
+    if (filterLevel === "HIGH") return j.risk.level === "HIGH";
+    if (filterLevel === "MED") return j.risk.level === "MEDIUM";
+    if (filterLevel === "LOW") return j.risk.level === "LOW";
+    return true;
   });
 
   return (
-    <div style={{
-      width: "100%",
+    <aside style={{
+      width: "360px",
       height: "100%",
+      background: "var(--bg-panel)",
+      backdropFilter: "var(--backdrop-blur)",
+      WebkitBackdropFilter: "var(--backdrop-blur)",
+      borderLeft: "1px solid var(--border-color)",
       display: "flex",
       flexDirection: "column",
-      background: "#111827",
-      borderLeft: "1px solid #1F2937"
+      zIndex: 950,
+      boxShadow: "-4px 0 24px rgba(0, 0, 0, 0.15)"
     }}>
-      {/* List Header & Filters */}
+      {/* Panel Header */}
       <div style={{
-        padding: "0.85rem 1rem",
-        borderBottom: "1px solid #1F2937",
+        padding: "1rem",
+        borderBottom: "1px solid var(--border-color)",
         display: "flex",
         flexDirection: "column",
-        gap: "0.5rem"
+        gap: "0.6rem"
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <h3 style={{ fontSize: "0.95rem", fontWeight: "700", color: "#F9FAFB", margin: 0, display: "flex", alignItems: "center", gap: "0.4rem" }}>
-            <Sliders style={{ width: "16px", height: "16px", color: "#3B82F6" }} />
-            Ranked Nagpur Risk Locations
+          <h3 style={{
+            fontSize: "1.1rem",
+            fontWeight: "900",
+            color: "var(--text-primary)",
+            fontFamily: "var(--font-tech)",
+            letterSpacing: "0.06em",
+            margin: 0,
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem"
+          }}>
+            <Sliders style={{ width: "18px", height: "18px", color: "var(--accent-cyan)" }} />
+            RANKED RISKS
           </h3>
-          <span style={{ fontSize: "0.72rem", color: "#9CA3AF", fontWeight: "600" }}>
-            {filtered.length} Junctions
+          <span style={{
+            background: "var(--accent-cyan-bg)",
+            color: "var(--accent-cyan)",
+            border: "1px solid var(--accent-cyan)",
+            fontSize: "0.68rem",
+            fontWeight: "700",
+            fontFamily: "var(--font-mono)",
+            padding: "0.15rem 0.55rem",
+            borderRadius: "12px"
+          }}>
+            {junctionsWithRisk.length} JUNCTIONS
           </span>
         </div>
 
-        {/* Filter Chips */}
-        <div style={{ display: "flex", gap: "0.35rem" }}>
-          {["ALL", "HIGH", "MEDIUM", "LOW"].map((level) => (
-            <button
-              key={level}
-              onClick={() => setFilterLevel(level)}
-              style={{
-                padding: "0.25rem 0.6rem",
-                borderRadius: "0.25rem",
-                border: "none",
-                fontSize: "0.7rem",
-                fontWeight: "700",
-                cursor: "pointer",
-                background: filterLevel === level ? "#3B82F6" : "#1F2937",
-                color: filterLevel === level ? "#FFF" : "#9CA3AF"
-              }}
-            >
-              {level}
-            </button>
-          ))}
+        {/* Filter Pills */}
+        <div style={{ display: "flex", gap: "0.4rem" }}>
+          {["ALL", "HIGH", "MED", "LOW"].map((level) => {
+            const isActive = filterLevel === level;
+            return (
+              <button
+                key={level}
+                onClick={() => setFilterLevel(level)}
+                style={{
+                  flex: 1,
+                  padding: "0.3rem 0.5rem",
+                  borderRadius: "4px",
+                  border: isActive ? "1px solid var(--accent-cyan)" : "1px solid var(--border-color)",
+                  fontSize: "0.72rem",
+                  fontWeight: "700",
+                  fontFamily: "var(--font-mono)",
+                  cursor: "pointer",
+                  background: isActive ? "var(--accent-cyan)" : "var(--bg-card)",
+                  color: isActive ? "#FFFFFF" : "var(--text-secondary)",
+                  transition: "all 0.15s ease",
+                  textTransform: "uppercase"
+                }}
+              >
+                {level}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Junction Cards Scroll Area */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "0.75rem", display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+      {/* Cards List Container */}
+      <div style={{
+        flex: 1,
+        overflowY: "auto",
+        padding: "0.85rem",
+        display: "flex",
+        flexDirection: "column",
+        gap: "0.75rem"
+      }}>
         {filtered.map((junction, index) => {
           const { id, name, zone, landmark, risk } = junction;
           const assigned = aiAssignments.assignments.find((a) => a.junctionId === id);
@@ -84,129 +123,144 @@ export default function RankedRiskList({
               className="glass-card"
               onClick={() => onSelectJunction(junction)}
               style={{
-                padding: "0.75rem",
-                borderLeft: `4px solid ${risk.color}`,
-                borderColor: isSimulated ? "#EF4444" : isCoverageGap ? "#F59E0B" : "rgba(255, 255, 255, 0.08)",
-                background: isSimulated
-                  ? "rgba(239, 68, 68, 0.12)"
+                padding: "0.85rem",
+                borderRadius: "8px",
+                border: isSimulated
+                  ? "1px solid var(--risk-high)"
                   : isCoverageGap
-                  ? "rgba(245, 158, 11, 0.12)"
-                  : "rgba(31, 41, 55, 0.75)",
+                  ? "1px solid var(--risk-med)"
+                  : "1px solid var(--border-color)",
+                background: isSimulated
+                  ? "var(--risk-high-bg)"
+                  : isCoverageGap
+                  ? "var(--risk-med-bg)"
+                  : "var(--bg-card)",
                 display: "flex",
                 flexDirection: "column",
-                gap: "0.4rem",
-                cursor: "pointer",
-                transition: "all 0.15s ease"
+                gap: "0.5rem",
+                cursor: "pointer"
               }}
             >
-              {/* Card Top Header */}
+              {/* Card Header: Rank #, Title & Score */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.15rem" }}>
-                    <span style={{ fontSize: "0.75rem", fontWeight: "800", color: "#60A5FA", fontFamily: "var(--font-mono)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.45rem" }}>
+                    <span style={{
+                      fontSize: "0.85rem",
+                      fontWeight: "900",
+                      color: "var(--accent-cyan)",
+                      fontFamily: "var(--font-mono)"
+                    }}>
                       #{index + 1}
                     </span>
-                    <span style={{ fontSize: "0.88rem", fontWeight: "700", color: "#F9FAFB" }}>
+                    <h4 style={{
+                      fontSize: "0.95rem",
+                      fontWeight: "800",
+                      color: "var(--text-primary)",
+                      fontFamily: "var(--font-heading)",
+                      margin: 0
+                    }}>
                       {name}
-                    </span>
+                    </h4>
                   </div>
-                  <span style={{ fontSize: "0.72rem", color: "#9CA3AF", display: "flex", alignItems: "center", gap: "0.2rem" }}>
-                    <MapPin style={{ width: "11px", height: "11px" }} />
-                    {zone}
+                  <span style={{
+                    fontSize: "0.7rem",
+                    color: "var(--text-secondary)",
+                    fontFamily: "var(--font-mono)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.25rem",
+                    marginTop: "0.15rem"
+                  }}>
+                    <MapPin style={{ width: "11px", height: "11px", color: "var(--accent-cyan)" }} />
+                    {zone || landmark}
                   </span>
                 </div>
 
                 {/* Score Pill */}
-                <div style={{ textAlign: "right" }}>
-                  <span className={`badge-${risk.level.toLowerCase()}`} style={{ fontSize: "0.8rem", padding: "0.2rem 0.5rem" }}>
-                    {risk.score}/100
-                  </span>
+                <div style={{
+                  background: risk.level === "HIGH" ? "var(--risk-high-bg)" : risk.level === "MEDIUM" ? "var(--risk-med-bg)" : "var(--risk-low-bg)",
+                  border: `1px solid ${risk.color}`,
+                  color: risk.color,
+                  padding: "0.2rem 0.55rem",
+                  borderRadius: "4px",
+                  fontFamily: "var(--font-mono)",
+                  fontWeight: "800",
+                  fontSize: "0.85rem"
+                }}>
+                  {risk.score}/100
                 </div>
               </div>
 
-              {/* Coverage Gap or Incident Tag */}
-              {isCoverageGap && (
-                <div style={{
-                  background: "rgba(245, 158, 11, 0.2)",
-                  border: "1px solid #D97706",
-                  color: "#FDE68A",
-                  fontSize: "0.68rem",
-                  padding: "0.2rem 0.4rem",
-                  borderRadius: "0.2rem",
-                  fontWeight: "700",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.3rem"
-                }}>
-                  <AlertTriangle style={{ width: "12px", height: "12px" }} />
-                  UNMANNED COVERAGE GAP (OFFICER REDEPLOYED)
-                </div>
-              )}
-
-              {/* Active Officer Information */}
+              {/* Officer Details Pill */}
               <div style={{
-                fontSize: "0.74rem",
-                color: "#D1D5DB",
-                background: "rgba(15, 23, 42, 0.6)",
-                padding: "0.35rem 0.5rem",
-                borderRadius: "0.25rem",
+                background: "var(--bg-hover)",
+                border: "1px solid var(--border-color)",
+                padding: "0.4rem 0.6rem",
+                borderRadius: "6px",
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "space-between"
+                justifyContent: "space-between",
+                fontSize: "0.75rem",
+                fontFamily: "var(--font-mono)"
               }}>
                 {assigned ? (
-                  <span style={{ color: "#60A5FA", fontWeight: "600" }}>
-                    👮 {assigned.officerName} ({assigned.distanceKm} km)
+                  <span style={{ color: "var(--accent-cyan)", fontWeight: "700", display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                    <Shield style={{ width: "13px", height: "13px", color: "var(--accent-cyan)" }} />
+                    {assigned.officerName} ({assigned.distanceKm}km)
                   </span>
                 ) : (
-                  <span style={{ color: "#FCA5A5", fontWeight: "600" }}>
-                    ⚠️ No Police Stationed
+                  <span style={{ color: "var(--risk-high)", fontWeight: "700" }}>
+                    ⚠️ 0 Stationed Officers
                   </span>
                 )}
-                <span style={{ fontSize: "0.68rem", color: "#9CA3AF" }}>
-                  {risk.activeComplaintCount} complaints
+                <span style={{ color: "var(--text-muted)", fontSize: "0.68rem" }}>
+                  {risk.activeComplaintCount} Reports
                 </span>
               </div>
 
-              {/* Action Buttons */}
-              <div style={{ display: "flex", gap: "0.35rem", marginTop: "0.2rem" }}>
+              {/* Action Buttons: EXPLAIN & REASSIGN */}
+              <div style={{ display: "flex", gap: "0.4rem" }}>
                 <button
-                  onClick={() => onSelectJunction(junction)}
-                  className="btn-secondary"
-                  style={{ flex: 1, padding: "0.25rem 0.5rem", fontSize: "0.7rem", justifyContent: "center" }}
-                >
-                  <Eye style={{ width: "12px", height: "12px" }} />
-                  Explain Score
-                </button>
-                <button
-                  onClick={() => onOpenOverride(junction)}
-                  className="btn-secondary"
-                  style={{ padding: "0.25rem 0.5rem", fontSize: "0.7rem" }}
-                  title="Manual Override Assignment"
-                >
-                  <UserCheck style={{ width: "12px", height: "12px" }} />
-                  Reassign
-                </button>
-                <button
-                  onClick={() => onTriggerIncident(id)}
-                  style={{
-                    background: "rgba(239, 68, 68, 0.2)",
-                    color: "#FCA5A5",
-                    border: "1px solid rgba(239, 68, 68, 0.4)",
-                    borderRadius: "0.25rem",
-                    padding: "0.25rem 0.5rem",
-                    fontSize: "0.7rem",
-                    cursor: "pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSelectJunction(junction);
                   }}
-                  title="Simulate Emergency Incident"
+                  className="btn-secondary"
+                  style={{
+                    flex: 1,
+                    justifyContent: "center",
+                    padding: "0.35rem 0.5rem",
+                    fontSize: "0.75rem",
+                    letterSpacing: "0.05em"
+                  }}
                 >
-                  <ShieldAlert style={{ width: "12px", height: "12px" }} />
+                  <Eye style={{ width: "13px", height: "13px" }} />
+                  EXPLAIN
+                </button>
+
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenOverride(junction);
+                  }}
+                  className="btn-secondary"
+                  style={{
+                    flex: 1,
+                    justifyContent: "center",
+                    padding: "0.35rem 0.5rem",
+                    fontSize: "0.75rem",
+                    letterSpacing: "0.05em"
+                  }}
+                >
+                  <UserCheck style={{ width: "13px", height: "13px" }} />
+                  REASSIGN
                 </button>
               </div>
             </div>
           );
         })}
       </div>
-    </div>
+    </aside>
   );
 }
