@@ -1,0 +1,8 @@
+# Ignore Python requirements so Vercel builds as Vite React Node.js app
+requirements.txt
+
+# Technical documentation & docx files
+*.docx
+*.md
+!README.md
+!DEPLOYMENT.md

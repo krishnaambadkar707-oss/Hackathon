@@ -15,7 +15,7 @@ This guide details how to deploy **Nagpur Traffic AI — Risk Heatmap & Police D
    - **Output Directory**: `dist`
 4. Click **Deploy**.
 
-*Note: Routing rules for Single Page Applications (SPA) are already pre-configured in `vercel.json`.*
+*Note: Single Page Application (SPA) routing rules (`vercel.json`) and `.vercelignore` (ignoring `requirements.txt` so Vercel uses Node.js/Vite instead of Python CPython) are already pre-configured.*
 
 ---
 
